@@ -1,0 +1,191 @@
+actor_name: ${actor.name}
+action_horizon: 8
+pred_horizon: 16
+# pred_horizon: 32
+obs_horizon: 1
+predict_past_actions: false # whether executable actions start from the past
+parts_poses_in_robot_frame: false
+task: one_leg
+observation_type: state
+environment: sim
+demo_source: teleop
+randomness: low
+discount: 0.999
+demo_outcome: success
+control:
+  act_rot_repr: rot_6d
+  control_mode: pos
+  controller: diffik
+wandb:
+  project: carp-${task}-${randomness}
+  notes: null
+  mode: online # online | offline | disable
+  continue_run_id: null
+  name: null
+  watch_model: false
+  osh_sync_interval: 25
+  entity: zhefeigong
+dryrun: false
+actor:
+  name: carp
+  flatten_obs: true
+  action_horizon: ${action_horizon}
+  pred_horizon: ${pred_horizon}
+  obs_horizon: ${obs_horizon}
+  predict_past_actions: ${predict_past_actions}
+  include_proprioceptive_pos: true
+  include_proprioceptive_ori: true
+  confusion_loss_beta: 0.0                    # for image-based confusion-loss -> coefficient of beta
+  confusion_loss_centroid_formulation: false  # for image-based confusion-loss -> centroid
+  confusion_loss_anchored: false              # for image-based confusion-loss -> pairwise
+  weight_confusion_loss_by_action: false      # for image-based confusion-loss -> sim & real
+  rescale_loss_for_domain: false              # for image-based -> different camera perspectives 
+  projection_dim: 128                         # for image-based
+  act_dim: 10
+  act_horizon: ${pred_horizon}
+  patch_nums: ${vqvae.patch_nums}
+  resos: ${vqvae.patch_nums}
+  vocab_size: ${vqvae.vocab_size}
+  vocab_ch: ${vqvae.vocab_ch}
+  vch: ${vqvae.vch}
+  vdrop: ${vqvae.vdrop}
+  vqbeta: ${vqvae.vqbeta}
+  vqnorm: ${vqvae.vqnorm}
+  vqresi: ${vqvae.vqresi}
+  obs_dim: null
+  tdepth: 16
+  tnobs: ${obs_horizon}
+  tembed: 64
+  saln: false
+  anorm: true
+  tini: -1
+  thd: 0.02
+  taln: 0.5
+  talng: 1e-3
+  tls: 0.0
+  tblr: 1e-4
+  tlr: ${eval:'${actor.ac} * ${actor.tblr} * ${training.batch_size} / 256'}
+  tclip: 2.
+  tsche: 'lin0'
+  twd: 0.05
+  twde: 0.
+  twp: ${eval:'${training.num_epochs} * 1/50'} 
+  twp0: 0.005
+  twpe: 0.1
+  fp16: 0
+  afuse: true
+  ac: 1
+  opt: 'adamw'
+  vae_ckpt_paths:
+  - path/to/x_act_dim.pt
+  - path/to/y_act_dim.pt
+  - path/to/z_act_dim.pt
+  - path/to/r1_act_dim.pt
+  - path/to/r2_act_dim.pt
+  - path/to/r3_act_dim.pt
+  - path/to/r4_act_dim.pt
+  - path/to/r5_act_dim.pt
+  - path/to/r6_act_dim.pt
+  - path/to/gripper_act_dim.pt
+vqvae:
+  act_horizon: ${pred_horizon}
+  vocab_size: 512
+  vocab_ch: 8
+  vch: 2
+  act_dim_sep: 0
+  patch_nums: [1, 2, 3, 4]
+  # patch_nums: [1, 3, 6, 8]
+  vqbeta: 0.25
+  vqnorm: true
+  vqresi: 0.5
+  vae_init: -0.5
+  vocab_init: -1
+  vopt_beta: '0.5_0.9'
+  opt: 'adamw'
+  ac: 1
+  vblr: 3e-4
+  vlr: ${eval:'${vqvae.ac} * ${vqvae.vblr} * ${training.batch_size} / 256'}
+  vwp: ${eval:'${training.num_epochs} * 1/50'} 
+  vwp0: 0.005
+  vwpe: 0.3
+  vsche: 'cos'
+  vwd: 0.005
+  vwde: 0
+  vdrop: 0.0
+  fp16: 0
+  tf32: true
+  afuse: true
+  vclip: 10.
+  vema: 0.9999
+  act_dim_names: ['x','y','z','r1','r2','r3','r4','r5','r6','gripper']
+rollout:
+  rollouts: true
+  every: 50 # 100
+  loss_threshold: 20020404 # 0.1
+  max_steps: 1000
+  num_envs: 256
+  count: ${rollout.num_envs}
+  save_rollouts: false
+  save_failures: false
+  randomness: ${randomness}
+  task: ${task}
+  n_parts_assemble: null
+  parts_poses_in_robot_frame: ${parts_poses_in_robot_frame}
+training:
+  gpu_id: 0
+  warmup_step: null # -> assigned in the code
+  max_global_step: null # -> assigned in the code
+  # actor_lr: 0.0001
+  # encoder_lr: ${training.actor_lr}
+  # clip_grad_norm: false
+  # clip_sample: true
+  # mixed_precision: false
+  num_epochs: 5000 # 12000
+  batch_size: 256
+  start_epoch: 0
+  steps_per_epoch: 1000
+  eval_every: 50
+  model_save_dir: models
+  checkpoint_interval: 500
+  store_best_test_loss_model: true
+  store_last_model: true
+  store_best_success_rate_model: true
+  # ema:
+  #   use: false
+  #   decay: 0.999
+  #   switch: false
+regularization:
+  feature_layernorm: false
+  weight_decay: 1.0e-06
+  feature_noise: 0.0
+  feature_dropout: 0.0
+  proprioception_dropout: 0.0
+  front_camera_dropout: 0.0
+  wrist_camera_dropout: 0.0
+  vib_front_feature_beta: 0.0
+  image_augmention:
+    random_erase: false
+  state_noise: 0.0
+data:
+  test_split: 0.05
+  data_subset: null
+  dataloader_workers: 16
+  pred_horizon: ${pred_horizon}
+  obs_horizon: ${obs_horizon}
+  action_horizon: ${action_horizon}
+  predict_past_actions: ${predict_past_actions}
+  augment_image: true
+  environment: ${environment}
+  task: ${task}
+  demo_source: ${demo_source}
+  randomness: ${randomness}
+  normalization: min_max
+  demo_outcome: ${demo_outcome}
+  pad_after: true
+  suffix: null
+  include_future_obs: false
+  minority_class_power: false
+  data_paths_override: null
+  load_into_memory: true
+  parts_poses_in_robot_frame: ${parts_poses_in_robot_frame}
+

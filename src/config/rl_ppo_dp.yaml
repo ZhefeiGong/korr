@@ -1,0 +1,115 @@
+seed: null
+torch_deterministic: false
+gpu_id: 0
+headless: true
+reset_on_failure: false
+reset_every_iteration: true
+reset_on_success: true
+sample_perturbations: false
+eval_interval: 5
+eval_first: true
+checkpoint_interval: -1
+truncation_as_done: true
+base_policy:
+  wandb_id: null
+  wt_type: best_success_rate
+  wt_path: /path/to/actor_chkpt_best_success_rate.pt
+observation_type: state
+total_timesteps: 1000000000
+num_envs: 1024
+num_minibatches: 1
+update_epochs: 50
+num_env_steps: 700
+data_collection_steps: ${num_env_steps}
+env:
+  randomness: low
+  task: one_leg
+actor:
+  residual_policy:
+    is_res_bkp_kpm: true # whether backpropagation from residual policy(ppo) to koopman model
+    obs_lift_dim: 256 # the dimension of the lifted function
+    pretrained_wts: null
+    init_logstd: -1.0
+    learn_std: false
+    _target_: src.models.residual.ResidualPolicy
+    action_head_std: 0.0
+    action_scale: 0.1
+    actor_hidden_size: 256
+    actor_num_layers: 2
+    critic_hidden_size: 256
+    critic_num_layers: 2
+    actor_activation: ReLU
+    critic_activation: ReLU
+    critic_last_layer_bias_const: 0.25
+    critic_last_layer_std: 0.25
+    g_goal_path: /path/to/goal_obs.pkl # path to the goal state
+  include_proprioceptive_pos: true
+  include_proprioceptive_ori: true
+  diffusion_model:
+    name: unet
+    down_dims:
+    - 256
+    - 512
+    - 1024
+    diffusion_step_embed_dim: 256
+    kernel_size: 5
+    n_groups: 8
+    flatten_obs: true
+  name: residual_diffusion
+  action_horizon: ${action_horizon}
+  pred_horizon: ${pred_horizon}
+  obs_horizon: ${obs_horizon}
+  predict_past_actions: ${predict_past_actions}
+  flatten_obs: ${actor.diffusion_model.flatten_obs}
+  beta_schedule: squaredcos_cap_v2
+  prediction_type: epsilon
+  inference_steps: 16
+  num_diffusion_iters: 100
+  clip_sample: true
+  loss_fn: MSELoss
+  confusion_loss_beta: 0.0
+  confusion_loss_centroid_formulation: false
+  rescale_loss_for_domain: false
+  confusion_loss_anchored: false
+  weight_confusion_loss_by_action: false
+  projection_dim: 128
+learning_rate_actor: 0.0003
+optimizer_betas_actor:
+- 0.9
+- 0.999
+learning_rate_critic: 0.005
+lr_scheduler:
+  name: cosine
+  actor_warmup_steps: 5
+  critic_warmup_steps: 0
+residual_l1: 0.0
+residual_l2: 0.0
+discount: 0.999
+gae_lambda: 0.95
+norm_adv: true
+normalize_reward: true
+clip_reward: 5.0
+clip_coef: 0.2
+clip_vloss: false
+ent_coef: 0.0
+vf_coef: 1.0
+max_grad_norm: 1.0
+target_kl: 0.1
+n_iterations_train_only_value: 0
+base_bc:
+  train_bc: false
+batch_size: ${eval:'${data_collection_steps} * ${num_envs}'}
+minibatch_size: ${eval:'${batch_size} // ${num_minibatches}'}
+num_iterations: ${eval:'${total_timesteps} // ${batch_size}'}
+control:
+  controller: diffik
+  control_mode: pos
+  act_rot_repr: rot_6d
+wandb:
+  project: ${env.task}-${observation_type}-${env.randomness}-dp-residual-rl
+  mode: online
+  entity: zhefeigong
+  notes: null
+  name: null
+  continue_run_id: null
+debug: true

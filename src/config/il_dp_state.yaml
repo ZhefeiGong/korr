@@ -1,0 +1,138 @@
+actor_name: ${actor.name}
+action_horizon: 8
+pred_horizon: 32
+obs_horizon: 1
+predict_past_actions: false
+parts_poses_in_robot_frame: false
+task: one_leg
+observation_type: state
+environment: sim
+demo_source: teleop
+randomness: low
+discount: 0.999
+demo_outcome: success
+control:
+  act_rot_repr: rot_6d
+  control_mode: pos
+  controller: diffik
+lr_scheduler:
+  name: cosine
+  warmup_steps: 10000
+  encoder_warmup_steps: 10000
+wandb:
+  project: ${task}-state-${randomness}
+  notes: null
+  mode: online
+  continue_run_id: null
+  name: null
+  watch_model: false
+  osh_sync_interval: 25
+  entity: zhefeigong
+dryrun: false
+actor:
+  include_proprioceptive_pos: true
+  include_proprioceptive_ori: true
+  diffusion_model:
+    name: unet
+    down_dims:
+    - 256
+    - 512
+    - 1024
+    diffusion_step_embed_dim: 256
+    kernel_size: 5
+    n_groups: 8
+    flatten_obs: true
+  name: diffusion
+  action_horizon: ${action_horizon}
+  pred_horizon: ${pred_horizon}
+  obs_horizon: ${obs_horizon}
+  predict_past_actions: ${predict_past_actions}
+  flatten_obs: ${actor.diffusion_model.flatten_obs}
+  beta_schedule: squaredcos_cap_v2
+  prediction_type: epsilon
+  inference_steps: 16
+  num_diffusion_iters: 100
+  clip_sample: true
+  loss_fn: MSELoss
+  confusion_loss_beta: 0.0
+  confusion_loss_centroid_formulation: false
+  rescale_loss_for_domain: false
+  confusion_loss_anchored: false
+  weight_confusion_loss_by_action: false
+  projection_dim: 128
+early_stopper:
+  smooth_factor: 0.9
+  patience: 'inf'
+  metric: val_loss
+rollout:
+  rollouts: true
+  every: 100
+  loss_threshold: 0.1
+  max_steps: 1000
+  num_envs: 256
+  count: ${rollout.num_envs}
+  save_rollouts: false
+  save_failures: false
+  randomness: ${randomness}
+  task: ${task}
+  n_parts_assemble: null
+  parts_poses_in_robot_frame: ${parts_poses_in_robot_frame}
+training:
+  gpu_id: 0
+  actor_lr: 0.0001
+  encoder_lr: ${training.actor_lr}
+  clip_grad_norm: false
+  clip_sample: true
+  mixed_precision: false
+  num_epochs: 5000
+  batch_size: 256
+  start_epoch: 0
+  steps_per_epoch: 1000
+  load_checkpoint_run_id: null
+  eval_every: 10
+  sample_every: 100
+  model_save_dir: models
+  checkpoint_interval: 500
+  store_best_test_loss_model: true
+  store_last_model: true
+  store_best_success_rate_model: true
+  ema:
+    use: false
+    decay: 0.999
+    switch: false
+regularization:
+  feature_layernorm: false
+  weight_decay: 1.0e-06
+  feature_noise: 0.0
+  feature_dropout: 0.0
+  proprioception_dropout: 0.0
+  front_camera_dropout: 0.0
+  wrist_camera_dropout: 0.0
+  vib_front_feature_beta: 0.0
+  image_augmention:
+    random_erase: false
+  state_noise: 0.0
+data:
+  test_split: 0.05
+  data_subset: null
+  dataloader_workers: 16
+  pred_horizon: ${pred_horizon}
+  obs_horizon: ${obs_horizon}
+  action_horizon: ${action_horizon}
+  predict_past_actions: ${predict_past_actions}
+  augment_image: true
+  environment: ${environment}
+  task: ${task}
+  demo_source: ${demo_source}
+  randomness: ${randomness}
+  normalization: min_max
+  demo_outcome: ${demo_outcome}
+  pad_after: true
+  suffix: null
+  include_future_obs: false
+  minority_class_power: false
+  data_paths_override: null
+  load_into_memory: true
+  parts_poses_in_robot_frame: ${parts_poses_in_robot_frame}
+multitask:
+  multitask: false
