@@ -8,13 +8,13 @@ via Koopman-Guided Dynamics Modeling
 
 <h4 align="center"> 
 <a href='https://zhefeigong.github.io/'>Zhefei Gong</a><sup>1</sup>,
-<a href='https://scholar.google.com/citations?user=3_DtxJ8AAAAJ'>Shangke Lyu</a><sup>1✉</sup>,
-<a href='https://dingpx.github.io/'>Pengxiang Ding</a><sup>12</sup>,
+<a href='https://scholar.google.com/citations?user=3_DtxJ8AAAAJ'>Shangke Lyu</a><sup>2✉</sup>,
+<a href='https://dingpx.github.io/'>Pengxiang Ding</a><sup>13</sup>,
 <a href='https://xiaowei-i.github.io/'>Wei Xiao</a><sup>1</sup>,
 <a href='https://en.westlake.edu.cn/faculty/donglin-wang.html'>Donglin Wang</a><sup>1✉</sup>
 </h4>
 
-<sup>1</sup>Westlake University, <sup>2</sup>Zhejiang University <br>
+<sup>1</sup>Westlake University, <sup>2</sup>Nanjing University, <sup>3</sup>Zhejiang University <br>
 <sup>✉</sup>Corresponding author.
 
 <a href='https://arxiv.org/abs/2509.12562'><img src='https://img.shields.io/badge/ArXiv-2509.12562-red'></a> 
